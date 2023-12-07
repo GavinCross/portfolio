@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+
+<html
+ 
+lang="en">
+
+<head>
+
+  
+<meta
+ 
+charset="UTF-8">
+
+  
+<meta
+ 
+name="viewport"
+ 
+content="width=device-width, initial-scale=1.0">
+
+  
+<title>Santa's Snowball Shootout!</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Game objects
+    let santa = {
+      x: canvas.width / 2,
+      y: canvas.height - 100,
+      img: new Image(),
+    };
+    santa.img.src = "./assets/images/santa.png";
+    evilElves.img.src ="./assets/images/evil-elves.png";
+    snowballs.img.src = "./assets/images/snowball.png";
+
+    let snowballs = [];
+    let evilElves = [];
+
+    // Game variables
+    let score = 0;
+    let gameOver = false;
+
+    // Event listeners
+    window.addEventListener("keydown", handleKeyDown);
+
+    function handleKeyDown(event) {
+      switch (event.key) {
+        case "w":
+          santa.y -= 10;
+          break;
+        case "a":
+          santa.x -= 10;
+          break;
+        case "s":
+          santa.y += 10;
+          break;
+        case "d":
+          santa.x += 10;
+          break;
+        case " ":
+          shootSnowball();
+          break;
+      }
+    }
+
+    function shootSnowball() {
+      let snowball = {
+        x: santa.x + santa.img.width / 2,
+        y: santa.y,
+        radius: 10,
+        speed: 10,
+      };
+      snowballs.push(snowball);
+    }
+
+    function checkCollision(object1, object2) {
+      let distanceX = object1.x - object2.x;
+      let distanceY = object1.y - object2.y;
+      let distance = Math.sqrt(Math.pow(distanceX, 2) + Math.pow(distanceY, 2));
+      return distance < object1.radius + object2.radius;
+    }
+
+    function updateGame() {
+      // Update snowballs
+      for (let i = snowballs.length - 1; i >= 0; i--) {
+        snowballs[i].y -= snowballs[i].speed;
+
+        // Check collision with evil elves
+        for (let j = evilElves.length - 1; j >= 0; j--) {
+          if (checkCollision(snowballs[i], evilElves[j])) {
+            score++;
+            evilElves.splice(j, 1);
+            snowballs.splice(i, 1);
+            break;
+          }
+        }
+
+        // Remove off-screen snowballs
+        if (snowballs[i].y < 0) {
+          snowballs.splice(i, 1);
+        }
+      }
+
+      // Update evil elves
+      for (let i = evilElves.length - 1; i >= 0; i--) {
+        evilElves[i].y += evilElves[i].speed;
+
+        // Check collision with Santa
+        if (checkCollision(santa, evilElves[i])) {
+          gameOver = true;
+          break;
+        }
+
+        // Remove off-screen evil elves
+        if (evilElves[i].y > canvas.height) {
+          evilElves.splice(i, 1);
+        }
+    }
+    // Spawn new evil elves
+  if (Math.random() < 0.01) {
+    evilElves.push({
+      x: Math.random() * canvas.width,
+      y: 0,
+      speed: 2 + Math.random() * 2,
+      img: new Image(),
+    });
+    evilElves[evilElves.length - 1].img.src = "./assets/images/evil-elves.png";
+  }
+}
+
+function drawGame() {
+  // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw background
+  ctx.drawImage(document.getElementById("background"), 0, 0, canvas.width, canvas.height);
+
+  // Draw Santa
+  ctx.drawImage(santa.img, santa.x, santa.y);
+
+  // Draw snowballs
+  for (let snowball of snowballs) {
+    ctx.beginPath();
+    ctx.arc(snowball.x, snowball.y, snowball.radius, 0, 2 * Math.PI);
+    ctx.fillStyle = "white";
+    ctx.fill();
+  }
+
+  // Draw evil elves
+  for (let evilElf of evilElves) {
+    ctx.drawImage(evilElf.img, evilElf.x, evilElf.y);
+  }
+
+  // Draw score
+  ctx.font = "20px Arial";
+  ctx.fillStyle = "black";
+  ctx.fillText(`Score: ${score}`, 10, 20);
+
+  // Draw game over message
+  if (gameOver) {
+    ctx.font = "40px Arial";
+    ctx.fillStyle = "red";
+    ctx.textAlign = "center";
+    ctx.fillText("Game Over!", canvas.width / 2, canvas.height / 2);
+  }
+}
+
+function mainLoop() {
+  if (!gameOver) {
+    updateGame();
+    drawGame();
+    window.requestAnimationFrame(mainLoop);
+  }
+}
+
+// Load resources and start the game
+santa.img.onload = () => {
+  document.getElementById("background").onload = () => {
+    mainLoop();
+  };
+};
+document.getElementById("background").src = "./assets/images/background.jpg";
+</script>
+</body>
+</html>
